@@ -9,6 +9,7 @@ class LlmWikiOpsSkillTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.skill_text = SKILL_PATH.read_text(encoding='utf-8')
+        cls.claude_text = (SKILL_PATH.parent / 'CLAUDE.md').read_text(encoding='utf-8')
 
     def test_skill_has_required_frontmatter_and_sections(self):
         text = self.skill_text
@@ -34,12 +35,30 @@ class LlmWikiOpsSkillTests(unittest.TestCase):
             self.assertIn(reference, text)
         self.assertIn('If those files are missing, stop for clarification instead of continuing.', text)
 
+    def test_skill_uses_project_root_placeholder_paths(self):
+        text = self.skill_text
+
+        self.assertIn('All paths in this skill are absolute paths anchored to `{{PROJECT_ROOT}}`.', text)
+        self.assertIn('Use injected absolute paths such as `{{PROJECT_ROOT}}/skills/llm-wiki-ops/CLAUDE.md` and `{{PROJECT_ROOT}}/wiki/index.md`.', text)
+        self.assertIn('{{PROJECT_ROOT}}/skills/llm-wiki-ops/CLAUDE.md', text)
+        self.assertIn('{{PROJECT_ROOT}}/skills/llm-wiki-ops/prompts/ingest.md', text)
+        self.assertNotIn('`./wiki/index.md`', text)
+        self.assertNotIn('`./CLAUDE.md`', text)
+        self.assertNotIn('`./prompts/ingest.md`', text)
+        self.assertNotIn('/Users/zifeng.chen/bb/think-flow', text)
+
+    def test_claude_rules_declare_project_root_placeholder_base(self):
+        text = self.claude_text
+
+        self.assertIn('All repository paths below are absolute paths anchored to `{{PROJECT_ROOT}}`.', text)
+        self.assertIn('{{PROJECT_ROOT}}/wiki/index.md', text)
+
     def test_skill_has_file_and_inline_ingest_examples(self):
         text = self.skill_text
 
         for snippet in [
             '## Invocation Examples',
-            'Use `llm-wiki-ops` to ingest `raw/inbox/foo.md`.',
+            'Use `llm-wiki-ops` to ingest `{{PROJECT_ROOT}}/raw/inbox/foo.md`.',
             'Use `llm-wiki-ops` to ingest this text:',
             'Use `llm-wiki-ops` to answer:',
             'Use `llm-wiki-ops` to lint the wiki.',
@@ -68,9 +87,9 @@ class LlmWikiOpsSkillTests(unittest.TestCase):
     def test_skill_requires_inline_text_materialization_into_raw_inbox(self):
         text = self.skill_text
 
-        self.assertIn('materialize the inline text into one new raw file under `raw/inbox/`', text)
+        self.assertIn('materialize the inline text into one new raw file under `{{PROJECT_ROOT}}/raw/inbox/`', text)
         self.assertIn('The text must not bypass the raw evidence layer.', text)
-        self.assertIn('If the input is inline text, materialize the inline text into one new raw file under `raw/inbox/`.', text)
+        self.assertIn('If the input is inline text, materialize the inline text into one new raw file under `{{PROJECT_ROOT}}/raw/inbox/`.', text)
 
     def test_skill_describes_filename_generation_and_collision_handling(self):
         text = self.skill_text
@@ -92,5 +111,5 @@ class LlmWikiOpsSkillTests(unittest.TestCase):
         text = self.skill_text
 
         self.assertIn('If the user asks to ingest inline text but does not actually provide enough content to write a source file, the skill must ask for the content instead of creating an empty raw file.', text)
-        self.assertIn('If the inline text cannot be written into `raw/inbox/`, the skill must stop and must not proceed to wiki updates.', text)
+        self.assertIn('If the inline text cannot be written into `{{PROJECT_ROOT}}/raw/inbox/`, the skill must stop and must not proceed to wiki updates.', text)
         self.assertIn('If raw-file creation succeeds but a later ingest step fails, the generated raw file should remain in place for retry and traceability.', text)
