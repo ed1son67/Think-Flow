@@ -3,34 +3,50 @@ import argparse
 import sys
 from pathlib import Path
 
+from wiki_model import render_frontmatter_list
 
-def build_content(title: str, date: str, topic_refs: list[str]) -> str:
-    topic_lines = '\n'.join(f'  - {topic}' for topic in topic_refs)
-    if not topic_lines:
-        topic_lines = '  []'
+
+def build_content(
+    title: str,
+    slug: str,
+    date: str,
+    concept_refs: list[str],
+    question_refs: list[str],
+) -> str:
+    concept_lines = render_frontmatter_list(concept_refs)
+    question_lines = render_frontmatter_list(question_refs)
     return f"""---
+id: {slug}
 title: {title}
 type: source
 status: active
 created: {date}
 updated: {date}
+aliases: []
 tags: []
-source_refs: []
-topic_refs:
-{topic_lines}
+source_kind: note
+raw_path: ""
+trust_level: medium
+claim_count: 0
+concept_refs:
+{concept_lines}
+question_refs:
+{question_lines}
 ---
 
-# Summary
+# Source Summary
 
-# Core Ideas
+# Claims
 
-# Key Details
+# Evidence Notes
 
-# Reusable Insights
+# Key Excerpts / Positions
 
-# Open Questions
+# Reliability Notes
 
-# Related Topics
+# Linked Concepts
+
+# Linked Questions
 """
 
 
@@ -40,7 +56,8 @@ def main() -> int:
     parser.add_argument('--date', required=True)
     parser.add_argument('--title', required=True)
     parser.add_argument('--slug', required=True)
-    parser.add_argument('--topic-ref', action='append', default=[])
+    parser.add_argument('--concept-ref', action='append', default=[])
+    parser.add_argument('--question-ref', action='append', default=[])
     args = parser.parse_args()
 
     root = Path(args.root)
@@ -49,7 +66,15 @@ def main() -> int:
     if target.exists():
         print(f'{target} already exists', file=sys.stderr)
         return 1
-    target.write_text(build_content(args.title, args.date, args.topic_ref))
+    target.write_text(
+        build_content(
+            title=args.title,
+            slug=args.slug,
+            date=args.date,
+            concept_refs=args.concept_ref,
+            question_refs=args.question_ref,
+        )
+    )
     print(target)
     return 0
 

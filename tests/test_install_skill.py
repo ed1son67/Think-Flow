@@ -28,15 +28,57 @@ class InstallSkillTests(unittest.TestCase):
             for path in sorted(candidate for candidate in root.rglob('*') if candidate.is_file())
         }
 
+    def test_default_install_installs_all_skill_directories(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            project_root = (Path(tmp) / 'project').resolve()
+            target_root = (Path(tmp) / 'target').resolve()
+            self.write_tree(
+                project_root / 'skills' / 'think-flow',
+                {
+                    'SKILL.md': 'read {{PROJECT_ROOT}}/CLAUDE.md',
+                },
+            )
+            self.write_tree(
+                project_root / 'skills' / 'think-flow-summary',
+                {
+                    'SKILL.md': 'summary for {{PROJECT_ROOT}}',
+                },
+            )
+
+            result = self.run_script(
+                '--project-root', str(project_root),
+                '--target-root', str(target_root),
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(
+                self.read_tree(target_root),
+                {
+                    'think-flow/SKILL.md': f'read {project_root}/CLAUDE.md',
+                    'think-flow-summary/SKILL.md': f'summary for {project_root}',
+                },
+            )
+            self.assertEqual(
+                result.stdout.strip().splitlines(),
+                [
+                    'installed think-flow',
+                    f'source: {project_root / "skills" / "think-flow"}',
+                    f'target: {target_root / "think-flow"}',
+                    'installed think-flow-summary',
+                    f'source: {project_root / "skills" / "think-flow-summary"}',
+                    f'target: {target_root / "think-flow-summary"}',
+                ],
+            )
+
     def test_install_into_empty_target_root_renders_project_root(self):
         with tempfile.TemporaryDirectory() as tmp:
             project_root = (Path(tmp) / 'project').resolve()
-            source = project_root / 'skills' / 'llm-wiki-ops'
+            source = project_root / 'skills' / 'think-flow'
             target_root = (Path(tmp) / 'target').resolve()
             self.write_tree(
                 source,
                 {
-                    'SKILL.md': 'read {{PROJECT_ROOT}}/skills/llm-wiki-ops/CLAUDE.md',
+                    'SKILL.md': 'read {{PROJECT_ROOT}}/CLAUDE.md',
                     'CLAUDE.md': 'write into {{PROJECT_ROOT}}/wiki/index.md',
                     'prompts/query.md': 'scan {{PROJECT_ROOT}}/wiki/topics',
                 },
@@ -49,20 +91,20 @@ class InstallSkillTests(unittest.TestCase):
             )
 
             self.assertEqual(result.returncode, 0, result.stderr)
-            target = target_root / 'llm-wiki-ops'
+            target = target_root / 'think-flow'
             self.assertTrue(target.is_dir())
             self.assertEqual(
                 self.read_tree(target),
                 {
                     'CLAUDE.md': f'write into {project_root}/wiki/index.md',
-                    'SKILL.md': f'read {project_root}/skills/llm-wiki-ops/CLAUDE.md',
+                    'SKILL.md': f'read {project_root}/CLAUDE.md',
                     'prompts/query.md': f'scan {project_root}/wiki/topics',
                 },
             )
             self.assertEqual(
                 result.stdout.strip().splitlines(),
                 [
-                    'installed llm-wiki-ops',
+                    'installed think-flow',
                     f'source: {source}',
                     f'target: {target}',
                 ],
@@ -71,7 +113,7 @@ class InstallSkillTests(unittest.TestCase):
     def test_update_replaces_contents_and_removes_stale_files(self):
         with tempfile.TemporaryDirectory() as tmp:
             project_root = (Path(tmp) / 'project').resolve()
-            source = project_root / 'skills' / 'llm-wiki-ops'
+            source = project_root / 'skills' / 'think-flow'
             target_root = (Path(tmp) / 'target').resolve()
             self.write_tree(
                 source,
@@ -81,7 +123,7 @@ class InstallSkillTests(unittest.TestCase):
                     'prompts/ingest.md': 'ingest {{PROJECT_ROOT}}/raw/inbox',
                 },
             )
-            target = target_root / 'llm-wiki-ops'
+            target = target_root / 'think-flow'
             self.write_tree(
                 target,
                 {
@@ -112,7 +154,7 @@ class InstallSkillTests(unittest.TestCase):
             self.assertEqual(
                 result.stdout.strip().splitlines(),
                 [
-                    'updated llm-wiki-ops',
+                    'updated think-flow',
                     f'source: {source}',
                     f'target: {target}',
                 ],
@@ -128,6 +170,36 @@ class InstallSkillTests(unittest.TestCase):
             self.assertEqual(result.returncode, 1)
             self.assertIn('error: source directory not found', result.stderr)
             self.assertIn(str(source), result.stderr)
+
+    def test_target_directory_name_follows_source_skill_directory_name(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            project_root = (Path(tmp) / 'project').resolve()
+            source = project_root / 'skills' / 'read-llm-conversations'
+            target_root = (Path(tmp) / 'target').resolve()
+            self.write_tree(
+                source,
+                {
+                    'SKILL.md': 'script {{PROJECT_ROOT}}/scripts/read_llm_conversation.py',
+                },
+            )
+
+            result = self.run_script(
+                '--source', str(source),
+                '--project-root', str(project_root),
+                '--target-root', str(target_root),
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertTrue((target_root / 'read-llm-conversations' / 'SKILL.md').is_file())
+            self.assertFalse((target_root / 'think-flow').exists())
+            self.assertEqual(
+                result.stdout.strip().splitlines(),
+                [
+                    'installed read-llm-conversations',
+                    f'source: {source}',
+                    f'target: {target_root / "read-llm-conversations"}',
+                ],
+            )
 
 
 if __name__ == '__main__':

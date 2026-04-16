@@ -1,61 +1,59 @@
 ---
-name: llm-wiki-ops
-description: Use when working inside an LLM Wiki repository to ingest a source, answer questions from the wiki, or run a wiki health check.
+name: think-flow
+description: Use when working inside a Think Flow wiki repository through `/th:ingest`, `/th:query`, or `/th:lint`.
 ---
 
-# LLM Wiki Ops
+# Think Flow
 
 ## Overview
-Use this skill as the single entry point for all LLM Wiki work: ingest, query, and lint. `ingest` supports both file ingest and inline ingest; the repo-local rules are the source of truth, and this skill only operationalizes them.
+Use this skill as the shared implementation contract behind the Think Flow slash commands: `/th:ingest`, `/th:query`, and `/th:lint`. `/th:ingest`, `/th:query` supports both file ingest and inline ingest; the repo-local rules are the source of truth, and this skill only operationalizes them.
 
 ## When to Use
-Use when the task is clearly one of these modes:
-- ingest a source from `raw/inbox/`
-- ingest single-line inline text or multi-line inline text
-- answer a question from the wiki
-- run a wiki health check / lint pass
+Use when the task is clearly one of these command flows:
+- `/th:ingest` for a source from `raw/inbox/`
+- `/th:ingest` for single-line inline text or multi-line inline text
+- `/th:query` for a question grounded in the wiki
+- `/th:lint` for a wiki health check / lint pass
 
 Do not use this skill for unrelated repository work.
 
-## Mode Detection
-Detect the mode conservatively.
-- file input
-- inline input
+## Command Routing
+Use `/th:ingest` for both file ingest and inline ingest inputs.
+Use `/th:query` for questions grounded in existing wiki content.
+Use `/th:lint` for health checks, missing-page checks, and structural hygiene.
 - If the request contains both a file path and a separate pasted body of text, stop and ask a clarifying question instead of guessing.
-- If the request is clearly asking for an answer grounded in existing wiki content, use `query`.
-- If the request is clearly about checking repository health, missing pages, or structural hygiene, use `lint`.
-- If the request could fit more than one mode, stop and ask a clarifying question instead of guessing.
+- If the user omits the `/th:` command prefix and the intent is ambiguous, stop and ask a clarifying question instead of guessing.
 
 ## Repository Contract
-Always read `{{PROJECT_ROOT}}/skills/llm-wiki-ops/CLAUDE.md` first. Then follow the mode-specific minimum reads.
+Always read `{{PROJECT_ROOT}}/CLAUDE.md` first. Then follow the command-specific minimum reads.
 All paths in this skill are absolute paths anchored to `{{PROJECT_ROOT}}`.
-Use injected absolute paths such as `{{PROJECT_ROOT}}/skills/llm-wiki-ops/CLAUDE.md` and `{{PROJECT_ROOT}}/wiki/index.md`.
-- `{{PROJECT_ROOT}}/skills/llm-wiki-ops/CLAUDE.md`
-- `{{PROJECT_ROOT}}/skills/llm-wiki-ops/prompts/ingest.md`
-- `{{PROJECT_ROOT}}/skills/llm-wiki-ops/prompts/query.md`
-- `{{PROJECT_ROOT}}/skills/llm-wiki-ops/prompts/lint.md`
+Use injected absolute paths such as `{{PROJECT_ROOT}}/CLAUDE.md` and `{{PROJECT_ROOT}}/wiki/index.md`.
+- `{{PROJECT_ROOT}}/CLAUDE.md`
+- `{{PROJECT_ROOT}}/skills/think-flow/prompts/ingest.md`
+- `{{PROJECT_ROOT}}/skills/think-flow/prompts/query.md`
+- `{{PROJECT_ROOT}}/skills/think-flow/prompts/lint.md`
 
 The repo-local rules define the workspace-specific ingest, query, and lint behavior; this skill does not replace them.
 If those files are missing, stop for clarification instead of continuing.
 
-## Required Reads by Mode
+## Required Reads by Command
 
-### ingest
-- `{{PROJECT_ROOT}}/skills/llm-wiki-ops/CLAUDE.md`
-- `{{PROJECT_ROOT}}/skills/llm-wiki-ops/prompts/ingest.md`
+### `/th:ingest`
+- `{{PROJECT_ROOT}}/CLAUDE.md`
+- `{{PROJECT_ROOT}}/skills/think-flow/prompts/ingest.md`
 - for file ingest: read the single source file from `{{PROJECT_ROOT}}/raw/inbox/`
 - for inline ingest: first materialize the inline text into one new raw file under `{{PROJECT_ROOT}}/raw/inbox/`, then read that generated raw file as the single source
 
-### query
-- `{{PROJECT_ROOT}}/skills/llm-wiki-ops/CLAUDE.md`
+### `/th:query`
+- `{{PROJECT_ROOT}}/CLAUDE.md`
 - `{{PROJECT_ROOT}}/wiki/index.md`
 - the most relevant topic pages
 - relevant source pages only if topic pages are insufficient
-- relevant query prompt scaffolds in `{{PROJECT_ROOT}}/skills/llm-wiki-ops/prompts/`, including `{{PROJECT_ROOT}}/skills/llm-wiki-ops/prompts/query.md`
+- relevant query prompt scaffolds in `{{PROJECT_ROOT}}/skills/think-flow/prompts/`, including `{{PROJECT_ROOT}}/skills/think-flow/prompts/query.md`
 
-### lint
-- `{{PROJECT_ROOT}}/skills/llm-wiki-ops/CLAUDE.md`
-- relevant prompt scaffolds in `{{PROJECT_ROOT}}/skills/llm-wiki-ops/prompts/`, including `{{PROJECT_ROOT}}/skills/llm-wiki-ops/prompts/lint.md`
+### `/th:lint`
+- `{{PROJECT_ROOT}}/CLAUDE.md`
+- relevant prompt scaffolds in `{{PROJECT_ROOT}}/skills/think-flow/prompts/`, including `{{PROJECT_ROOT}}/skills/think-flow/prompts/lint.md`
 - `{{PROJECT_ROOT}}/wiki/index.md`
 - the pages needed to inspect the reported issue
 
@@ -76,15 +74,15 @@ If those files are missing, stop for clarification instead of continuing.
 - The text must not bypass the raw evidence layer.
 
 ## Execution Contract
-- Operate one mode at a time: ingest, query, or lint.
+- Operate one command at a time: `/th:ingest`, `/th:query`, or `/th:lint`.
 - Follow the repo-local workflow for the selected mode.
 - Prefer existing wiki pages over creating new ones.
 - Preserve raw evidence; do not rewrite files under `raw/`.
 - Keep changes minimal and aligned with the requested mode.
-- For ingest, follow this sequence:
-  1. Read `{{PROJECT_ROOT}}/skills/llm-wiki-ops/CLAUDE.md`.
-  2. Read `{{PROJECT_ROOT}}/skills/llm-wiki-ops/prompts/ingest.md`.
-  3. If the input is inline text, materialize the inline text into one new raw file under `{{PROJECT_ROOT}}/raw/inbox/`.
+- For `/th:ingest`, follow this sequence:
+  1. Read `{{PROJECT_ROOT}}/CLAUDE.md`.
+  2. Read `{{PROJECT_ROOT}}/skills/think-flow/prompts/ingest.md`.
+  3. If the `/th:ingest` input is inline text, materialize the inline text into one new raw file under `{{PROJECT_ROOT}}/raw/inbox/`.
   4. Process exactly one source.
   5. Create or update one source page under `{{PROJECT_ROOT}}/wiki/sources/`.
   6. Update one or more relevant topic pages under `{{PROJECT_ROOT}}/wiki/topics/`.
@@ -92,25 +90,25 @@ If those files are missing, stop for clarification instead of continuing.
   8. Append an ingest entry to `{{PROJECT_ROOT}}/wiki/log.md`.
   9. Move the raw source from `{{PROJECT_ROOT}}/raw/inbox/` to `{{PROJECT_ROOT}}/raw/processed/`.
   10. Verify the resulting files exist and are linked.
-- If mode detection is unclear, pause and ask for clarification.
+- If command routing is unclear, pause and ask for clarification.
 
 ## Invocation Examples
-- Use `llm-wiki-ops` to ingest `{{PROJECT_ROOT}}/raw/inbox/foo.md`.
-- Use `llm-wiki-ops` to ingest this text: We should keep source pages separate from topic pages because sources are evidence and topics are synthesis.
-- Use `llm-wiki-ops` to ingest this text:
+- `/th:ingest {{PROJECT_ROOT}}/raw/inbox/foo.md`
+- `/th:ingest We should keep source pages separate from topic pages because sources are evidence and topics are synthesis.`
+- `/th:ingest`
   ```
   # Project Constraints
   - source pages stay separate from topic pages
   - raw files remain immutable
   - wiki updates should preserve traceability
   ```
-- Use `llm-wiki-ops` to answer: "What does the wiki conclude about source ingestion?"
-- Use `llm-wiki-ops` to lint the wiki.
+- `/th:query What does the wiki conclude about source ingestion?`
+- `/th:lint`
 
 ## Output Contract
 - **ingest**: summarize the source, list the pages written or updated, note any open questions or follow-ups.
 - **inline ingest**: also report the generated raw file path under `{{PROJECT_ROOT}}/raw/inbox/` and whether the content was preserved as markdown-like text or minimally wrapped as plain text.
-- **query**: separate wiki-backed conclusions from inference, and cite which wiki pages were used.
+- **query**: separate wiki-backed conclusions from inference, append a `## 来源` section to the end of the answer, and list only the wiki pages actually used.
 - **lint**: report findings, severity, and whether any durable wiki content changed.
 
 ## Failure Boundaries

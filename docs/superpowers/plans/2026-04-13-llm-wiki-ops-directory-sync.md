@@ -1,5 +1,7 @@
 # LLM Wiki Ops Directory Sync Implementation Plan
 
+> Historical note: this document describes the legacy `llm-wiki-ops` naming and layout from 2026-04-13. The current live repo uses the `think-flow` skill under `skills/think-flow/`, the root schema file at `CLAUDE.md`, and `/th:*` command entrypoints.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Change `python3 scripts/install_skill.py` so it mirrors the full repo-local `skills/llm-wiki-ops/` directory into Claude Code's global skills directory.

@@ -1,5 +1,7 @@
 # LLM Wiki Ops Skill Design
 
+> Historical note: this document describes the legacy `llm-wiki-ops` naming and layout from 2026-04-13. The current live repo uses the `think-flow` skill under `skills/think-flow/`, the root schema file at `CLAUDE.md`, and `/th:*` command entrypoints.
+
 ## Goal
 
 Design a single callable skill for Claude Code that lets the user operate this repository as an LLM Wiki through one entrypoint that can ingest documents, answer questions from the wiki, and run wiki health checks.

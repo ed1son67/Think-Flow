@@ -7,10 +7,8 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_SOURCE = ROOT / 'skills' / 'llm-wiki-ops'
 DEFAULT_PROJECT_ROOT = ROOT
 DEFAULT_TARGET_ROOT = Path.home() / '.claude' / 'skills'
-SKILL_NAME = 'llm-wiki-ops'
 PROJECT_ROOT_TOKEN = '{{PROJECT_ROOT}}'
 
 
@@ -34,20 +32,9 @@ def copy_tree_with_render(source: Path, target: Path, project_root: Path) -> Non
             shutil.copy2(path, destination)
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--source', type=Path, default=DEFAULT_SOURCE)
-    parser.add_argument('--project-root', type=Path, default=DEFAULT_PROJECT_ROOT)
-    parser.add_argument('--target-root', type=Path, default=DEFAULT_TARGET_ROOT)
-    args = parser.parse_args()
-
-    source = args.source.resolve()
-    project_root = args.project_root.resolve()
-    target = args.target_root.resolve() / SKILL_NAME
-
-    if not source.is_dir():
-        print(f'error: source directory not found: {source}', file=sys.stderr)
-        return 1
+def install_skill(source: Path, target_root: Path, project_root: Path) -> list[str]:
+    skill_name = source.name
+    target = target_root / skill_name
 
     existed = target.exists()
     if target.exists():
@@ -56,9 +43,37 @@ def main() -> int:
     copy_tree_with_render(source, target, project_root)
 
     action = 'updated' if existed else 'installed'
-    print(f'{action} llm-wiki-ops')
-    print(f'source: {source}')
-    print(f'target: {target}')
+    return [
+        f'{action} {skill_name}',
+        f'source: {source}',
+        f'target: {target}',
+    ]
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--source', type=Path)
+    parser.add_argument('--project-root', type=Path, default=DEFAULT_PROJECT_ROOT)
+    parser.add_argument('--target-root', type=Path, default=DEFAULT_TARGET_ROOT)
+    args = parser.parse_args()
+
+    project_root = args.project_root.resolve()
+    target_root = args.target_root.resolve()
+
+    if args.source is not None:
+        sources = [args.source.resolve()]
+    else:
+        skills_root = project_root / 'skills'
+        sources = sorted(path for path in skills_root.iterdir() if path.is_dir())
+
+    for source in sources:
+        if not source.is_dir():
+            print(f'error: source directory not found: {source}', file=sys.stderr)
+            return 1
+
+    for source in sources:
+        for line in install_skill(source, target_root, project_root):
+            print(line)
     return 0
 
 

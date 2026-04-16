@@ -1,5 +1,7 @@
 # LLM Wiki Ops Directory Sync Design
 
+> Historical note: this document describes the legacy `llm-wiki-ops` naming and layout from 2026-04-13. The current live repo uses the `think-flow` skill under `skills/think-flow/`, the root schema file at `CLAUDE.md`, and `/th:*` command entrypoints.
+
 ## Goal
 
 Change `llm-wiki-ops` installation so one command syncs the entire repo-local skill directory into Claude Code's global skills directory, not just `SKILL.md`.

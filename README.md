@@ -1,75 +1,288 @@
-# LLM Wiki
+# Think Flow
 
-A pattern for building personal knowledge bases using LLMs.
+Think Flow 是一个面向 LLM Agent 的本地优先知识库工作流仓库。它用一套稳定的 Markdown 目录结构、规则文件和轻量脚本，把“原始资料 -> 结构化 Wiki -> 可复用结论”串起来，适合在 Obsidian、Claude Code、Cursor、Codex 等环境中持续沉淀知识。
 
-This is an idea file, it is designed to be copy pasted to your own LLM Agent (e.g. OpenAI Codex, Claude Code, OpenCode / Pi, or etc.). Its goal is to communicate the high level idea, but your agent will build out the specifics in collaboration with you.
+项目核心不是“临时问答”，而是让 Agent 维护一个会持续积累的 Wiki：
 
-## The core idea
+- `raw/` 保存原始资料，作为证据层
+- `wiki/` 保存 Agent 生成和维护的结构化知识页
+- `CLAUDE.md`、`AGENTS.md`、`skills/` 定义工作规则和命令入口
+- `scripts/` 提供少量本地辅助脚本
 
-Most people's experience with LLMs and documents looks like RAG: you upload a collection of files, the LLM retrieves relevant chunks at query time, and generates an answer. This works, but the LLM is rediscovering knowledge from scratch on every question. There's no accumulation. Ask a subtle question that requires synthesizing five documents, and the LLM has to find and piece together the relevant fragments every time. Nothing is built up. NotebookLM, ChatGPT file uploads, and most RAG systems work this way.
+## 适用场景
 
-The idea here is different. Instead of just retrieving from raw documents at query time, the LLM **incrementally builds and maintains a persistent wiki** — a structured, interlinked collection of markdown files that sits between you and the raw sources. When you add a new source, the LLM doesn't just index it for later retrieval. It reads it, extracts the key information, and integrates it into the existing wiki — updating entity pages, revising topic summaries, noting where new data contradicts old claims, strengthening or challenging the evolving synthesis. The knowledge is compiled once and then *kept current*, not re-derived on every query.
+- 持续阅读和整理论文、文章、播客笔记
+- 搭建个人研究知识库或团队内部知识库
+- 将一次次 AI 对话沉淀为可追溯、可复用的长期资产
+- 在 Obsidian 中可视化浏览知识结构，同时让 Agent 负责维护
 
-This is the key difference: **the wiki is a persistent, compounding artifact.** The cross-references are already there. The contradictions have already been flagged. The synthesis already reflects everything you've read. The wiki keeps getting richer with every source you add and every question you ask.
+## 仓库结构
 
-You never (or rarely) write the wiki yourself — the LLM writes and maintains all of it. You're in charge of sourcing, exploration, and asking the right questions. The LLM does all the grunt work — the summarizing, cross-referencing, filing, and bookkeeping that makes a knowledge base actually useful over time. In practice, I have the LLM agent open on one side and Obsidian open on the other. The LLM makes edits based on our conversation, and I browse the results in real time — following links, checking the graph view, reading the updated pages. Obsidian is the IDE; the LLM is the programmer; the wiki is the codebase.
+```text
+think-flow/
+├── raw/                  # 原始资料层，Agent 只读，不应重写
+├── wiki/                 # Wiki 页面、索引、日志
+├── scripts/              # 本地辅助脚本
+├── skills/               # Think Flow 技能定义
+├── tests/                # 回归测试
+├── CLAUDE.md             # 仓库工作规则
+├── AGENTS.md             # Codex / OMX 运行规则
+└── LLM-WIKI.md           # 设计理念说明
+```
 
-This can apply to a lot of different contexts. A few examples:
+关键目录说明：
 
-- **Personal**: tracking your own goals, health, psychology, self-improvement — filing journal entries, articles, podcast notes, and building up a structured picture of yourself over time.
-- **Research**: going deep on a topic over weeks or months — reading papers, articles, reports, and incrementally building a comprehensive wiki with an evolving thesis.
-- **Reading a book**: filing each chapter as you go, building out pages for characters, themes, plot threads, and how they connect. By the end you have a rich companion wiki. Think of fan wikis like [Tolkien Gateway](https://tolkiengateway.net/wiki/Main_Page) — thousands of interlinked pages covering characters, places, events, languages, built by a community of volunteers over years. You could build something like that personally as you read, with the LLM doing all the cross-referencing and maintenance.
-- **Business/team**: an internal wiki maintained by LLMs, fed by Slack threads, meeting transcripts, project documents, customer calls. Possibly with humans in the loop reviewing updates. The wiki stays current because the LLM does the maintenance that no one on the team wants to do.
-- **Competitive analysis, due diligence, trip planning, course notes, hobby deep-dives** — anything where you're accumulating knowledge over time and want it organized rather than scattered.
+- `raw/inbox/`：待处理资料入口
+- `raw/processed/`：已处理资料归档
+- `raw/assets/`：资料附件
+- `wiki/sources/`：单个来源的摘要页
+- `wiki/topics/`：主题归纳页
+- `wiki/syntheses/`：高价值问答或分析沉淀
+- `wiki/index.md`：内容索引
+- `wiki/log.md`：操作日志
 
-## Architecture
+## 主要能力
 
-There are three layers:
+### 1. Ingest
 
-**Raw sources** — your curated collection of source documents. Articles, papers, images, data files. These are immutable — the LLM reads from them but never modifies them. This is your source of truth.
+把一份资料或一段笔记摄入到知识库：
 
-**The wiki** — a directory of LLM-generated markdown files. Summaries, entity pages, concept pages, comparisons, an overview, a synthesis. The LLM owns this layer entirely. It creates pages, updates them when new sources arrive, maintains cross-references, and keeps everything consistent. You read it; the LLM writes it.
+- 读取 `raw/inbox/` 中的单个文件，或把内联文本先落到 `raw/inbox/`
+- 生成/更新 `wiki/sources/` 来源页
+- 更新相关 `wiki/topics/`
+- 更新 `wiki/index.md` 与 `wiki/log.md`
+- 将已处理原始资料移到 `raw/processed/`
 
-**The schema** — a document (e.g. CLAUDE.md for Claude Code or AGENTS.md for Codex) that tells the LLM how the wiki is structured, what the conventions are, and what workflows to follow when ingesting sources, answering questions, or maintaining the wiki. This is the key configuration file — it's what makes the LLM a disciplined wiki maintainer rather than a generic chatbot. You and the LLM co-evolve this over time as you figure out what works for your domain.
+### 2. Query
 
-## Operations
+基于已有 Wiki 回答问题，而不是每次都直接扫原始文档：
 
-**Ingest.** You drop a new source into the raw collection and tell the LLM to process it. An example flow: the LLM reads the source, discusses key takeaways with you, writes a summary page in the wiki, updates the index, updates relevant entity and concept pages across the wiki, and appends an entry to the log. A single source might touch 10-15 wiki pages. Personally I prefer to ingest sources one at a time and stay involved — I read the summaries, check the updates, and guide the LLM on what to emphasize. But you could also batch-ingest many sources at once with less supervision. It's up to you to develop the workflow that fits your style and document it in the schema for future sessions.
+- 优先读取 `wiki/index.md`
+- 先看 topic，再看 source
+- 区分“Wiki 已有结论”和“模型推断”
+- 支持把高价值回答继续写回 `wiki/syntheses/`
 
-**Query.** You ask questions against the wiki. The LLM searches for relevant pages, reads them, and synthesizes an answer with citations. Answers can take different forms depending on the question — a markdown page, a comparison table, a slide deck (Marp), a chart (matplotlib), a canvas. The important insight: **good answers can be filed back into the wiki as new pages.** A comparison you asked for, an analysis, a connection you discovered — these are valuable and shouldn't disappear into chat history. This way your explorations compound in the knowledge base just like ingested sources do.
+### 3. Lint
 
-**Lint.** Periodically, ask the LLM to health-check the wiki. Look for: contradictions between pages, stale claims that newer sources have superseded, orphan pages with no inbound links, important concepts mentioned but lacking their own page, missing cross-references, data gaps that could be filled with a web search. The LLM is good at suggesting new questions to investigate and new sources to look for. This keeps the wiki healthy as it grows.
+检查 Wiki 结构和基本健康状态：
 
-## Indexing and logging
+- 是否缺少 `index.md` / `log.md`
+- 内容页是否缺失 frontmatter
+- 页面是否遗漏索引项
+- 页面是否为空
 
-Two special files help the LLM (and you) navigate the wiki as it grows. They serve different purposes:
+### 4. Summary
 
-**index.md** is content-oriented. It's a catalog of everything in the wiki — each page listed with a link, a one-line summary, and optionally metadata like date or source count. Organized by category (entities, concepts, sources, etc.). The LLM updates it on every ingest. When answering a query, the LLM reads the index first to find relevant pages, then drills into them. This works surprisingly well at moderate scale (~100 sources, ~hundreds of pages) and avoids the need for embedding-based RAG infrastructure.
+把当前 Claude / Codex / Cursor 会话整理成可复用知识，再继续走 ingest 流程。
 
-**log.md** is chronological. It's an append-only record of what happened and when — ingests, queries, lint passes. A useful tip: if each entry starts with a consistent prefix (e.g. `## [2026-04-02] ingest | Article Title`), the log becomes parseable with simple unix tools — `grep "^## \[" log.md | tail -5` gives you the last 5 entries. The log gives you a timeline of the wiki's evolution and helps the LLM understand what's been done recently.
+## 环境要求
 
-## Optional: CLI tools
+运行本仓库的本地脚本通常只需要：
 
-At some point you may want to build small tools that help the LLM operate on the wiki more efficiently. A search engine over the wiki pages is the most obvious one — at small scale the index file is enough, but as the wiki grows you want proper search. [qmd](https://github.com/tobi/qmd) is a good option: it's a local search engine for markdown files with hybrid BM25/vector search and LLM re-ranking, all on-device. It has both a CLI (so the LLM can shell out to it) and an MCP server (so the LLM can use it as a native tool). You could also build something simpler yourself — the LLM can help you vibe-code a naive search script as the need arises.
+- Python 3.9+
+- Git
+- 一个支持仓库规则和命令的 LLM Agent 环境，例如 Claude Code、Cursor、Codex
 
-## Tips and tricks
+可选依赖：
 
-- **Obsidian Web Clipper** is a browser extension that converts web articles to markdown. Very useful for quickly getting sources into your raw collection.
-- **Download images locally.** In Obsidian Settings → Files and links, set "Attachment folder path" to a fixed directory (e.g. `raw/assets/`). Then in Settings → Hotkeys, search for "Download" to find "Download attachments for current file" and bind it to a hotkey (e.g. Ctrl+Shift+D). After clipping an article, hit the hotkey and all images get downloaded to local disk. This is optional but useful — it lets the LLM view and reference images directly instead of relying on URLs that may break. Note that LLMs can't natively read markdown with inline images in one pass — the workaround is to have the LLM read the text first, then view some or all of the referenced images separately to gain additional context. It's a bit clunky but works well enough.
-- **Obsidian's graph view** is the best way to see the shape of your wiki — what's connected to what, which pages are hubs, which are orphans.
-- **Marp** is a markdown-based slide deck format. Obsidian has a plugin for it. Useful for generating presentations directly from wiki content.
-- **Dataview** is an Obsidian plugin that runs queries over page frontmatter. If your LLM adds YAML frontmatter to wiki pages (tags, dates, source counts), Dataview can generate dynamic tables and lists.
-- The wiki is just a git repo of markdown files. You get version history, branching, and collaboration for free.
+- `pytest`：用于运行测试
+- Obsidian：用于浏览和维护本地 Wiki
 
-## Why this works
+## 安装
 
-The tedious part of maintaining a knowledge base is not the reading or the thinking — it's the bookkeeping. Updating cross-references, keeping summaries current, noting when new data contradicts old claims, maintaining consistency across dozens of pages. Humans abandon wikis because the maintenance burden grows faster than the value. LLMs don't get bored, don't forget to update a cross-reference, and can touch 15 files in one pass. The wiki stays maintained because the cost of maintenance is near zero.
+### 1. 克隆仓库
 
-The human's job is to curate sources, direct the analysis, ask good questions, and think about what it all means. The LLM's job is everything else.
+```bash
+git clone <your-repo-url> think-flow
+cd think-flow
+```
 
-The idea is related in spirit to Vannevar Bush's Memex (1945) — a personal, curated knowledge store with associative trails between documents. Bush's vision was closer to this than to what the web became: private, actively curated, with the connections between documents as valuable as the documents themselves. The part he couldn't solve was who does the maintenance. The LLM handles that.
+### 2. 准备 Python 环境
 
+如果你希望隔离依赖，建议使用虚拟环境：
 
-## Note
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
 
-This document is intentionally abstract. It describes the idea, not a specific implementation. The exact directory structure, the schema conventions, the page formats, the tooling — all of that will depend on your domain, your preferences, and your LLM of choice. Everything mentioned above is optional and modular — pick what's useful, ignore what isn't. For example: your sources might be text-only, so you don't need image handling at all. Your wiki might be small enough that the index file is all you need, no search engine required. You might not care about slide decks and just want markdown pages. You might want a completely different set of output formats. The right way to use this is to share it with your LLM agent and work together to instantiate a version that fits your needs. The document's only job is to communicate the pattern. Your LLM can figure out the rest.
+本仓库没有强制运行时依赖；如果你要跑测试，再安装 `pytest`：
+
+```bash
+python3 -m pip install pytest
+```
+
+### 3. 安装 Think Flow Skill
+
+仓库内置了技能安装脚本，会把 `skills/` 下的技能复制到目标目录，并把 `{{PROJECT_ROOT}}` 渲染为当前项目绝对路径。
+
+安装全部技能：
+
+```bash
+python3 scripts/install_skill.py \
+  --project-root "$(pwd)" \
+  --target-root "$HOME/.claude/skills"
+```
+
+仅安装单个技能：
+
+```bash
+python3 scripts/install_skill.py \
+  --source "$(pwd)/skills/think-flow" \
+  --project-root "$(pwd)" \
+  --target-root "$HOME/.claude/skills"
+```
+
+默认目标目录是 `~/.claude/skills`，因此这个安装方式最适合 Claude Code。Cursor 命令模板已随仓库提供在 `.cursor/commands/` 下；Codex 则直接读取本仓库中的 `AGENTS.md` 与 `skills/` 规则。
+
+## 如何使用
+
+### 方式一：通过 Agent 命令工作流使用
+
+这是推荐方式。仓库已经定义了 Think Flow 的命令入口：
+
+- `/th:ingest`
+- `/th:query`
+- `/th:lint`
+- `/th:summary`
+
+典型用法：
+
+```text
+/th:ingest raw/inbox/my-article.md
+/th:ingest 这是一段希望沉淀到知识库的内联笔记
+/th:query 当前 wiki 对 agent framework selection 的结论是什么？
+/th:lint
+/th:summary
+```
+
+工作流约束：
+
+- 原始资料应先进入 `raw/`
+- `raw/` 是证据层，原则上不应被重写
+- 查询优先基于 `wiki/`，不是直接把聊天记录当长期资产
+- durable output 应回写到 `wiki/`
+
+### 方式二：直接运行本地脚本
+
+适合调试、验证和批量操作。
+
+#### 安装技能
+
+```bash
+python3 scripts/install_skill.py --project-root "$(pwd)"
+```
+
+#### 检查索引覆盖
+
+这个脚本会检查 `wiki/sources/`、`wiki/topics/`、`wiki/syntheses/` 中的页面是否都已出现在 `wiki/index.md`。
+
+```bash
+python3 scripts/update_index.py --root "$(pwd)"
+```
+
+#### 执行 wiki lint
+
+只报告问题：
+
+```bash
+python3 scripts/lint_wiki.py --root "$(pwd)" --mode report
+```
+
+安全修复缺失的系统文件后再检查：
+
+```bash
+python3 scripts/lint_wiki.py --root "$(pwd)" --mode safe-fix
+```
+
+#### 新建 source 页面模板
+
+```bash
+python3 scripts/new_source.py \
+  --root "$(pwd)" \
+  --date 2026-04-16 \
+  --title "Example Source" \
+  --slug example-source
+```
+
+#### 读取当前 AI 会话
+
+读取当前 Codex 会话：
+
+```bash
+python3 scripts/read_llm_conversation.py \
+  --tool codex \
+  --current \
+  --cwd "$(pwd)" \
+  --format json
+```
+
+读取当前 Claude 会话：
+
+```bash
+python3 scripts/read_llm_conversation.py \
+  --tool claude \
+  --current \
+  --cwd "$(pwd)" \
+  --format json
+```
+
+读取当前 Cursor transcript：
+
+```bash
+python3 scripts/read_llm_conversation.py \
+  --tool cursor \
+  --current \
+  --cwd "$(pwd)" \
+  --format json
+```
+
+## 推荐使用流程
+
+### 日常沉淀
+
+1. 将资料放入 `raw/inbox/`
+2. 用 `/th:ingest` 处理单个来源
+3. 在 Obsidian 中查看 `wiki/index.md`、topic 页和图谱
+4. 用 `/th:query` 询问跨资料问题
+5. 定期运行 `/th:lint`
+
+### 对话沉淀
+
+1. 在当前仓库中与 Claude / Codex / Cursor 完成一轮工作
+2. 执行 `/th:summary`
+3. 让会话结论先落到 `raw/inbox/`
+4. 再自动进入 ingest，把会话知识写入 wiki
+
+## 设计原则
+
+- Local-first：知识资产保存在本地 Markdown 中
+- Evidence first：`raw/` 是证据层，`wiki/` 是综合层
+- Incremental synthesis：知识应逐步积累，而不是每次从零检索
+- Agent-maintained：由 Agent 负责整理、链接、更新和归档
+- Human-guided：由人决定资料来源、关注重点和最终判断
+
+## 测试与验证
+
+运行全部测试：
+
+```bash
+python3 -m pytest -q
+```
+
+如果本地没有安装 `pytest`，先执行：
+
+```bash
+python3 -m pip install pytest
+```
+
+## 相关文件
+
+- [LLM-WIKI.md](./LLM-WIKI.md)：项目理念与背景
+- [CLAUDE.md](./CLAUDE.md)：仓库内 Think Flow 操作规则
+- [skills/think-flow/SKILL.md](./skills/think-flow/SKILL.md)：核心技能说明
+- [skills/think-flow-summary/SKILL.md](./skills/think-flow-summary/SKILL.md)：会话总结技能
+
+## English Version
+
+英文说明见 [README_EN.md](./README_EN.md)。

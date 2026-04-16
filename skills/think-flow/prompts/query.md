@@ -10,7 +10,11 @@ All repository paths below are absolute paths anchored to `{{PROJECT_ROOT}}`.
 4. Distinguish current wiki conclusions from inference.
 5. If the answer is reusable, save it as a page in `{{PROJECT_ROOT}}/wiki/syntheses/`.
 6. If the query reveals missing links or missing structure, update the relevant pages.
+7. Append a `## 来源` section to the end of the answer.
+8. In the `## 来源` section, list only the wiki pages actually used to answer the question.
 
 ## Output checklist
 - answer cites the wiki pages used
+- answer appends a `## 来源` section to the end of the answer
+- `## 来源` lists only the wiki pages actually used
 - durable analysis is promoted into `wiki/syntheses/` when appropriate

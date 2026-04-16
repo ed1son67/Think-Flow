@@ -1,5 +1,7 @@
 # LLM Wiki Ops Inline Text Ingest Design
 
+> Historical note: this document describes the legacy `llm-wiki-ops` naming and layout from 2026-04-13. The current live repo uses the `think-flow` skill under `skills/think-flow/`, the root schema file at `CLAUDE.md`, and `/th:*` command entrypoints.
+
 ## Goal
 
 Extend `llm-wiki-ops` so ingest mode can accept inline text in addition to file paths, while preserving the repository’s existing raw-evidence-first ingest workflow.
