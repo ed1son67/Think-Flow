@@ -27,8 +27,10 @@ export async function GET(
       let closed = false;
       let sentEvents = 0;
       let lastStatus = "";
+      let intervalId: ReturnType<typeof setInterval> | null = null;
 
       const send = (event: unknown) => {
+        if (closed) return;
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
       };
 
@@ -59,7 +61,7 @@ export async function GET(
         ) {
           closed = true;
           controller.close();
-          clearInterval(intervalId);
+          if (intervalId) clearInterval(intervalId);
         }
       };
 
@@ -70,7 +72,7 @@ export async function GET(
         finalMessage: taskState.finalMessage ?? null,
       });
 
-      const intervalId = setInterval(() => {
+      intervalId = setInterval(() => {
         void tick();
       }, 300);
 
@@ -78,7 +80,7 @@ export async function GET(
 
       return () => {
         closed = true;
-        clearInterval(intervalId);
+        if (intervalId) clearInterval(intervalId);
       };
     },
     cancel() {

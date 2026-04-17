@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { ArrowRight, Orbit, Sparkles } from "lucide-react";
 
@@ -7,9 +8,12 @@ type HomeHeroProps = {
 
 export function HomeHero({ totalPages }: HomeHeroProps) {
   return (
-    <section className="grain-card rounded-[2rem] border border-line bg-panel-strong p-8 shadow-[0_20px_80px_rgba(73,54,34,0.12)] sm:p-12">
+    <section className="grain-card motion-stagger rounded-[2rem] border border-line bg-panel-strong p-8 shadow-[0_20px_80px_rgba(73,54,34,0.12)] sm:p-12">
       <div className="home-grid rounded-[1.5rem] border border-white/40 bg-[rgba(255,250,243,0.84)] p-6 sm:p-8">
-        <div className="flex flex-wrap items-center gap-3 text-xs font-mono uppercase tracking-[0.24em] text-accent-strong">
+        <div
+          className="motion-stagger flex flex-wrap items-center gap-3 text-xs font-mono uppercase tracking-[0.24em] text-accent-strong"
+          style={{ "--motion-delay": "60ms" } as CSSProperties}
+        >
           <span className="rounded-full border border-accent/20 bg-accent-soft px-3 py-1">
             Fumadocs Frontend
           </span>
@@ -18,7 +22,10 @@ export function HomeHero({ totalPages }: HomeHeroProps) {
           </span>
         </div>
 
-        <div className="mt-6 max-w-4xl space-y-6">
+        <div
+          className="motion-stagger mt-6 max-w-4xl space-y-6"
+          style={{ "--motion-delay": "110ms" } as CSSProperties}
+        >
           <h1 className="max-w-4xl text-4xl font-semibold tracking-[-0.08em] text-foreground sm:text-6xl">
             Think Flow now has a proper front door for the wiki.
           </h1>
@@ -30,17 +37,20 @@ export function HomeHero({ totalPages }: HomeHeroProps) {
           </p>
         </div>
 
-        <div className="mt-8 flex flex-col gap-4 sm:flex-row">
+        <div
+          className="motion-stagger mt-8 flex flex-col gap-4 sm:flex-row"
+          style={{ "--motion-delay": "160ms" } as CSSProperties}
+        >
           <Link
             href="/docs"
-            className="inline-flex items-center justify-center gap-2 rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white transition hover:bg-accent-strong"
+            className="surface-interactive pressable inline-flex items-center justify-center gap-2 rounded-full bg-accent px-6 py-3 text-sm font-semibold text-white transition hover:bg-accent-strong"
           >
             Open the wiki
             <ArrowRight className="size-4" />
           </Link>
           <Link
             href="/docs"
-            className="inline-flex items-center justify-center gap-2 rounded-full border border-line bg-white/70 px-6 py-3 text-sm font-semibold text-foreground transition hover:bg-white"
+            className="surface-interactive pressable inline-flex items-center justify-center gap-2 rounded-full border border-line bg-white/70 px-6 py-3 text-sm font-semibold text-foreground transition hover:bg-white"
           >
             Browse the index
             <Orbit className="size-4" />
@@ -48,7 +58,10 @@ export function HomeHero({ totalPages }: HomeHeroProps) {
         </div>
 
         <div className="mt-10 grid gap-4 sm:grid-cols-3">
-          <div className="rounded-[1.25rem] border border-line bg-white/80 p-4">
+          <div
+            className="motion-stagger surface-interactive rounded-[1.25rem] border border-line bg-white/80 p-4"
+            style={{ "--motion-delay": "220ms" } as CSSProperties}
+          >
             <p className="text-xs font-mono uppercase tracking-[0.22em] text-muted">
               Scale
             </p>
@@ -59,7 +72,10 @@ export function HomeHero({ totalPages }: HomeHeroProps) {
               Markdown pages available from the current wiki snapshot.
             </p>
           </div>
-          <div className="rounded-[1.25rem] border border-line bg-white/80 p-4">
+          <div
+            className="motion-stagger surface-interactive rounded-[1.25rem] border border-line bg-white/80 p-4"
+            style={{ "--motion-delay": "260ms" } as CSSProperties}
+          >
             <p className="text-xs font-mono uppercase tracking-[0.22em] text-muted">
               Search
             </p>
@@ -70,7 +86,10 @@ export function HomeHero({ totalPages }: HomeHeroProps) {
               Orama search is configured for mixed Chinese and English content.
             </p>
           </div>
-          <div className="rounded-[1.25rem] border border-line bg-white/80 p-4">
+          <div
+            className="motion-stagger surface-interactive rounded-[1.25rem] border border-line bg-white/80 p-4"
+            style={{ "--motion-delay": "300ms" } as CSSProperties}
+          >
             <p className="text-xs font-mono uppercase tracking-[0.22em] text-muted">
               Workflow
             </p>

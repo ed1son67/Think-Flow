@@ -24,6 +24,42 @@ export type SearchResult = {
 
 const PRIMARY_SECTIONS: SearchSection[] = ["root", "topics", "syntheses"];
 const SECONDARY_SECTIONS: SearchSection[] = ["sources"];
+const STOP_TOKENS = new Set([
+  "what",
+  "does",
+  "do",
+  "the",
+  "a",
+  "an",
+  "about",
+  "current",
+  "wiki",
+  "conclude",
+  "conclusion",
+  "tell",
+  "show",
+  "is",
+  "are",
+  "was",
+  "were",
+  "how",
+  "why",
+  "which",
+  "when",
+  "where",
+  "who",
+  "吗",
+  "呢",
+  "呀",
+  "吧",
+  "是什么",
+  "什么",
+  "怎么",
+  "如何",
+  "为什么",
+  "结论",
+  "当前",
+]);
 
 function getDocsRoot() {
   return path.join(process.cwd(), "content", "docs");
@@ -69,7 +105,8 @@ function tokenize(value: string) {
   const tokens = normalized
     .split(/[\s/]+/u)
     .map((token) => token.trim())
-    .filter((token) => token.length >= 2);
+    .filter((token) => token.length >= 2)
+    .filter((token) => !STOP_TOKENS.has(token));
 
   return Array.from(new Set(tokens));
 }
@@ -108,23 +145,75 @@ function extractSnippet(rawContent: string, query: string, tokens: string[]) {
   return start > 0 ? `...${snippet}` : snippet;
 }
 
+export function buildEvidenceResults(
+  documents: SearchDocument[],
+  repoPaths: string[],
+  query: string,
+) {
+  const tokens = tokenize(query);
+  const byRepoPath = new Map(
+    documents.map((document) => [document.repoPath, document]),
+  );
+
+  return repoPaths
+    .map((repoPath) => {
+      const document = byRepoPath.get(repoPath);
+      if (!document) return null;
+
+      return {
+        id: document.id,
+        title: document.title,
+        section: document.section,
+        href: document.href,
+        repoPath: document.repoPath,
+        score: 0,
+        snippet: extractSnippet(document.content, query, tokens),
+      } satisfies SearchResult;
+    })
+    .filter((result): result is SearchResult => result !== null);
+}
+
 function scoreDocument(document: SearchDocument, query: string, tokens: string[]) {
   const normalizedTitle = normalizeText(document.title);
   const normalizedContent = normalizeText(document.content);
   const normalizedQuery = normalizeText(query);
   const sectionWeight =
     document.section === "topics"
-      ? 60
+      ? 78
       : document.section === "syntheses"
-        ? 52
+        ? 54
         : document.section === "root"
-          ? 30
+          ? 4
           : 18;
+
+  const queryInTitle = normalizedTitle.includes(normalizedQuery);
+  const queryInContent = normalizedContent.includes(normalizedQuery);
+
+  const matchedTitleTokens = tokens.filter((token) =>
+    normalizedTitle.includes(token),
+  ).length;
+  const matchedContentTokens = tokens.filter((token) =>
+    normalizedContent.includes(token),
+  ).length;
+  const hasAnyMatch =
+    queryInTitle || queryInContent || matchedTitleTokens > 0 || matchedContentTokens > 0;
+
+  if (!hasAnyMatch) {
+    return 0;
+  }
 
   let score = sectionWeight;
 
-  if (normalizedTitle.includes(normalizedQuery)) score += 120;
-  if (normalizedContent.includes(normalizedQuery)) score += 45;
+  if (queryInTitle) score += 120;
+  if (queryInContent) score += 45;
+
+  const titleCoverage = tokens.length > 0 ? matchedTitleTokens / tokens.length : 0;
+  score += matchedTitleTokens * 14;
+  score += Math.round(titleCoverage * 60);
+
+  if (document.section === "topics") {
+    score += Math.round(titleCoverage * 24);
+  }
 
   for (const token of tokens) {
     score += countOccurrences(normalizedTitle, token) * 18;

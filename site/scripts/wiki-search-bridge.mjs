@@ -3,6 +3,11 @@ import { readFile, writeFile } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import os from "node:os";
 import path from "node:path";
+import {
+  consumeCodexTextChunk,
+  createCodexTextStreamState,
+  splitTextForStreaming,
+} from "./codex-text-stream.mjs";
 
 export function buildSearchPrompt({ question, results }) {
   const formattedResults = results
@@ -36,6 +41,8 @@ export function buildSearchArgs({ prompt, lastMessagePath }) {
     "--sandbox",
     "read-only",
     "--skip-git-repo-check",
+    "--color",
+    "never",
     "--output-last-message",
     lastMessagePath,
     "-C",
@@ -63,19 +70,40 @@ async function main() {
   });
 
   await writeFile(
-    path.join(path.dirname(inputFile), `${path.basename(inputFile, ".json")}-prompt.txt`),
+    path.join(
+      path.dirname(inputFile),
+      `${path.basename(inputFile, ".json")}-prompt.txt`,
+    ),
     prompt,
     "utf8",
   );
+
+  const stdoutState = createCodexTextStreamState();
+  let emittedText = "";
 
   await new Promise((resolve, reject) => {
     const child = spawn("codex", args, {
       cwd: process.cwd(),
       env: process.env,
-      stdio: ["ignore", "ignore", "pipe"],
+      stdio: ["ignore", "pipe", "pipe"],
     });
 
     let stderr = "";
+
+    child.stdout.on("data", (chunk) => {
+      const emitted = consumeCodexTextChunk(
+        stdoutState,
+        chunk.toString("utf8"),
+        false,
+      );
+      if (emitted) {
+        emittedText += emitted;
+        for (const piece of splitTextForStreaming(emitted)) {
+          process.stdout.write(piece);
+        }
+      }
+    });
+
     child.stderr.on("data", (chunk) => {
       stderr += chunk.toString("utf8");
     });
@@ -83,22 +111,29 @@ async function main() {
     child.on("error", reject);
     child.on("close", (code) => {
       if (code === 0) {
+        const emitted = consumeCodexTextChunk(stdoutState, "", true);
+        if (emitted) {
+          emittedText += emitted;
+          for (const piece of splitTextForStreaming(emitted)) {
+            process.stdout.write(piece);
+          }
+        }
+        if (!emittedText.trim() && existsSync(lastMessagePath)) {
+          const finalMessage = readFile(lastMessagePath, "utf8");
+          Promise.resolve(finalMessage).then((text) => {
+            if (text.trim()) {
+              process.stdout.write(text);
+            }
+            resolve(undefined);
+          }).catch(reject);
+          return;
+        }
         resolve(undefined);
       } else {
         reject(new Error(stderr.trim() || `codex exited with code ${code}`));
       }
     });
   });
-
-  const summary = existsSync(lastMessagePath)
-    ? (await readFile(lastMessagePath, "utf8")).trim()
-    : "";
-
-  process.stdout.write(
-    JSON.stringify({
-      summary,
-    }),
-  );
 }
 
 if (process.argv[1] === new URL(import.meta.url).pathname) {

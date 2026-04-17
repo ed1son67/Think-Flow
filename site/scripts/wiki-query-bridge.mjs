@@ -3,6 +3,12 @@ import { existsSync, readFileSync } from "node:fs";
 import { appendFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  consumeCodexTextChunk,
+  createCodexTextStreamState,
+  splitTextForStreaming,
+  shouldIgnoreCodexStderrLine,
+} from "./codex-text-stream.mjs";
 
 const currentFile = fileURLToPath(import.meta.url);
 const currentDir = path.dirname(currentFile);
@@ -40,67 +46,15 @@ export function buildCodexPrompt({ question, repoRoot }) {
 export function buildCodexArgs({ repoRoot, prompt, lastMessagePath }) {
   return [
     "exec",
-    "--json",
     "--full-auto",
+    "--color",
+    "never",
     "--output-last-message",
     lastMessagePath,
     "-C",
     repoRoot,
     prompt,
   ];
-}
-
-export function parseCodexJsonLine(line) {
-  try {
-    const parsed = JSON.parse(line);
-
-    if (parsed.type === "thread.started") {
-      return {
-        type: "status",
-        status: "starting",
-        message: "Codex thread started.",
-        threadId: parsed.thread_id,
-      };
-    }
-
-    if (parsed.type === "turn.started") {
-      return {
-        type: "status",
-        status: "running",
-        message: "Codex is querying the wiki.",
-      };
-    }
-
-    if (
-      parsed.type === "item.completed" &&
-      parsed.item?.type === "agent_message" &&
-      typeof parsed.item.text === "string"
-    ) {
-      return {
-        type: "chunk",
-        text: parsed.item.text,
-      };
-    }
-
-    if (parsed.type === "turn.completed") {
-      return {
-        type: "status",
-        status: "running",
-        message: "Codex completed its turn.",
-        usage: parsed.usage,
-      };
-    }
-
-    return {
-      type: "debug",
-      raw: parsed,
-    };
-  } catch {
-    return {
-      type: "log",
-      text: line,
-    };
-  }
 }
 
 function getTaskDir(taskId) {
@@ -159,6 +113,11 @@ async function runTask(taskId) {
     status: "running",
     message: "Launching local Codex query.",
   });
+  await appendEvent(eventsPath, {
+    type: "status",
+    status: "starting",
+    message: "Codex thread started.",
+  });
 
   const args = buildCodexArgs({
     repoRoot,
@@ -171,28 +130,21 @@ async function runTask(taskId) {
     stdio: ["ignore", "pipe", "pipe"],
   });
 
-  let stdoutBuffer = "";
+  const stdoutState = createCodexTextStreamState();
+  let accumulatedText = "";
   let stderrBuffer = "";
-  const textChunks = [];
   let settled = false;
 
-  const flushStdout = async (flushAll = false) => {
-    const parts = stdoutBuffer.split("\n");
-    if (!flushAll) {
-      stdoutBuffer = parts.pop() ?? "";
-    } else {
-      stdoutBuffer = "";
-    }
+  const flushStdout = async (chunk, flushAll = false) => {
+    const emitted = consumeCodexTextChunk(stdoutState, chunk, flushAll);
+    if (!emitted) return;
 
-    for (const part of parts) {
-      const line = part.trim();
-      if (!line) continue;
-
-      const event = parseCodexJsonLine(line);
-      if (event.type === "chunk" && typeof event.text === "string") {
-        textChunks.push(event.text);
-      }
-      await appendEvent(eventsPath, event);
+    for (const piece of splitTextForStreaming(emitted)) {
+      accumulatedText += piece;
+      await appendEvent(eventsPath, {
+        type: "chunk",
+        text: piece,
+      });
     }
   };
 
@@ -207,7 +159,7 @@ async function runTask(taskId) {
     for (const part of parts) {
       const line = part.trim();
       if (!line) continue;
-      if (line === "Reading additional input from stdin...") continue;
+      if (shouldIgnoreCodexStderrLine(line)) continue;
 
       await appendEvent(eventsPath, {
         type: "stderr",
@@ -220,13 +172,13 @@ async function runTask(taskId) {
     if (settled) return;
     settled = true;
 
-    await flushStdout(true);
+    await flushStdout("", true);
     await flushStderr(true);
 
     const finalMessage =
       existsSync(lastMessagePath)
         ? (await readFile(lastMessagePath, "utf8")).trim()
-        : textChunks.join("\n\n").trim();
+        : accumulatedText.trim() || null;
 
     await writeState(statePath, {
       ...meta,
@@ -235,7 +187,7 @@ async function runTask(taskId) {
       completedAt: new Date().toISOString(),
       error: error ?? null,
       exitCode: code ?? null,
-      finalMessage: finalMessage || null,
+      finalMessage,
     });
 
     if (finalMessage) {
@@ -258,8 +210,7 @@ async function runTask(taskId) {
   };
 
   child.stdout.on("data", (chunk) => {
-    stdoutBuffer += chunk.toString("utf8");
-    void flushStdout(false);
+    void flushStdout(chunk.toString("utf8"), false);
   });
 
   child.stderr.on("data", (chunk) => {

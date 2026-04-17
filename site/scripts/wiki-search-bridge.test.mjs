@@ -11,7 +11,8 @@ test("buildSearchPrompt constrains the model to provided search results", () => 
         title: "AI Agent Framework Selection",
         section: "topics",
         repoPath: "wiki/topics/ai-agent-framework-selection.md",
-        snippet: "LangGraph is the default comparison point for general production agents.",
+        snippet:
+          "LangGraph is the default comparison point for general production agents.",
       },
     ],
   });
@@ -21,18 +22,20 @@ test("buildSearchPrompt constrains the model to provided search results", () => 
   assert.match(prompt, /wiki\/topics\/ai-agent-framework-selection\.md/u);
 });
 
-test("buildSearchArgs runs codex in read-only ephemeral mode", () => {
+test("buildSearchArgs runs codex in read-only stdout mode", () => {
   const args = buildSearchArgs({
     prompt: "hello",
     lastMessagePath: "/tmp/last-message.txt",
   });
 
-  assert.deepEqual(args.slice(0, 8), [
+  assert.deepEqual(args.slice(0, 10), [
     "exec",
     "--ephemeral",
     "--sandbox",
     "read-only",
     "--skip-git-repo-check",
+    "--color",
+    "never",
     "--output-last-message",
     "/tmp/last-message.txt",
     "-C",

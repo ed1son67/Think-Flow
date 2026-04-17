@@ -4,8 +4,12 @@ import assert from "node:assert/strict";
 import {
   buildCodexArgs,
   buildCodexPrompt,
-  parseCodexJsonLine,
 } from "./wiki-query-bridge.mjs";
+import {
+  consumeCodexTextChunk,
+  createCodexTextStreamState,
+  splitTextForStreaming,
+} from "./codex-text-stream.mjs";
 
 test("buildCodexPrompt embeds the Think Flow query contract and question", () => {
   const prompt = buildCodexPrompt({
@@ -19,50 +23,61 @@ test("buildCodexPrompt embeds the Think Flow query contract and question", () =>
   assert.match(prompt, /agent framework selection/u);
 });
 
-test("buildCodexArgs enables json mode and captures the final message", () => {
+test("buildCodexArgs uses plain stdout mode and captures the final message", () => {
   const args = buildCodexArgs({
     repoRoot: "/tmp/think-flow",
     prompt: "hello",
     lastMessagePath: "/tmp/task/last-message.txt",
   });
 
-  assert.deepEqual(args.slice(0, 4), [
+  assert.deepEqual(args.slice(0, 5), [
     "exec",
-    "--json",
     "--full-auto",
+    "--color",
+    "never",
     "--output-last-message",
   ]);
   assert.equal(args.at(-2), "/tmp/think-flow");
   assert.equal(args.at(-1), "hello");
 });
 
-test("parseCodexJsonLine extracts agent message text chunks", () => {
-  const event = parseCodexJsonLine(
-    JSON.stringify({
-      type: "item.completed",
-      item: {
-        type: "agent_message",
-        text: "hello",
-      },
-    }),
+test("consumeCodexTextChunk keeps only assistant text and ignores tool logs", () => {
+  const state = createCodexTextStreamState();
+  const output = consumeCodexTextChunk(
+    state,
+    [
+      "OpenAI Codex v0.121.0 (research preview)",
+      "--------",
+      "user",
+      "Question",
+      "codex",
+      "First answer line",
+      "exec",
+      '/bin/zsh -lc "echo hi"',
+      " succeeded in 0ms:",
+      "hi",
+      "codex",
+      "Second answer line",
+      "tokens used",
+      "123",
+      "",
+    ].join("\n"),
+    true,
   );
 
-  assert.deepEqual(event, {
-    type: "chunk",
-    text: "hello",
-  });
+  assert.equal(output, "First answer line\nSecond answer line\n");
 });
 
-test("parseCodexJsonLine maps turn start into a running status event", () => {
-  const event = parseCodexJsonLine(
-    JSON.stringify({
-      type: "turn.started",
-    }),
+test("splitTextForStreaming breaks large text into smaller progressive pieces", () => {
+  const chunks = splitTextForStreaming(
+    "Alpha beta gamma. Delta epsilon zeta.",
+    12,
   );
 
-  assert.deepEqual(event, {
-    type: "status",
-    status: "running",
-    message: "Codex is querying the wiki.",
-  });
+  assert.deepEqual(chunks, [
+    "Alpha beta g",
+    "amma.",
+    " Delta epsil",
+    "on zeta.",
+  ]);
 });
