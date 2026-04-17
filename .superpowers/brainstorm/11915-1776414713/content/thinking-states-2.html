@@ -1,0 +1,115 @@
+<h2>Thinking As Part Of Result</h2>
+<p class="subtitle">状态并入结果卡片顶部，过程改成可折叠的 thinking 区块，运行时有呼吸点和展开动效。</p>
+
+<div class="cards">
+  <div class="card" data-choice="open-after-complete" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">A · 完成后默认展开</div>
+        <div class="mockup-body" style="display:grid;grid-template-columns:1.08fr 0.92fr;gap:16px;background:#f6f0e9;">
+          <div style="display:flex;flex-direction:column;gap:12px;min-height:440px;">
+            <div style="padding:14px;border-radius:14px;background:#fff8f1;border:1px solid #d8c9b8;">
+              <div class="label">Question</div>
+              <div class="placeholder" style="height:78px;">textarea + mode + actions</div>
+            </div>
+            <div style="padding:16px;border-radius:22px;background:#201710;color:#f7efe5;flex:1;display:flex;flex-direction:column;justify-content:flex-start;">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                <div>
+                  <div class="label" style="color:#d8c6b3;">Result</div>
+                  <div style="margin-top:8px;font-size:12px;color:#dacdbf;">completed · summary ready</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <span style="display:inline-block;width:8px;height:8px;border-radius:999px;background:#75c08f;"></span>
+                  <span style="font-size:12px;color:#dacdbf;">thinking expanded</span>
+                </div>
+              </div>
+              <div style="margin-top:14px;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.08);">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                  <strong style="font-size:13px;">Thinking</strong>
+                  <span style="font-size:12px;color:#dacdbf;">collapse</span>
+                </div>
+                <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.08);font-size:12px;line-height:1.7;color:#e6dccf;">
+                  queued → matched 3 pages → summarized evidence → drafted answer
+                </div>
+              </div>
+              <div style="margin-top:12px;padding:14px;border-radius:16px;background:#fff8f1;color:#231a12;min-height:150px;">
+                final answer content
+              </div>
+            </div>
+          </div>
+          <div style="padding:14px;border-radius:18px;background:#fbf7f2;border:1px solid #d8c9b8;display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div class="label">References</div>
+              <div class="label">Accordion</div>
+            </div>
+            <div style="padding:0;border-radius:12px;background:#fff;border:1px solid #d8c9b8;overflow:hidden;">
+              <div style="padding:12px;border-bottom:1px solid #eadfd2;">doc 1 title</div>
+              <div style="padding:12px;background:#fcfaf7;">expanded excerpt</div>
+            </div>
+            <div style="padding:12px;border-radius:12px;background:#fff;border:1px solid #d8c9b8;">doc 2 collapsed</div>
+            <div style="padding:12px;border-radius:12px;background:#fff;border:1px solid #d8c9b8;">doc 3 collapsed</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>方案 A</h3>
+      <p>回答结束后自动保留 thinking 展开，方便立即核对过程和证据。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="collapse-after-complete" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">B · 完成后默认收起</div>
+        <div class="mockup-body" style="display:grid;grid-template-columns:1.08fr 0.92fr;gap:16px;background:#f6f0e9;">
+          <div style="display:flex;flex-direction:column;gap:12px;min-height:440px;">
+            <div style="padding:14px;border-radius:14px;background:#fff8f1;border:1px solid #d8c9b8;">
+              <div class="label">Question</div>
+              <div class="placeholder" style="height:78px;">textarea + mode + actions</div>
+            </div>
+            <div style="padding:16px;border-radius:22px;background:#201710;color:#f7efe5;flex:1;display:flex;flex-direction:column;justify-content:flex-start;">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+                <div>
+                  <div class="label" style="color:#d8c6b3;">Result</div>
+                  <div style="margin-top:8px;font-size:12px;color:#dacdbf;">completed · summary ready</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <span style="display:inline-block;width:8px;height:8px;border-radius:999px;background:#75c08f;"></span>
+                  <span style="font-size:12px;color:#dacdbf;">thinking collapsed</span>
+                </div>
+              </div>
+              <div style="margin-top:14px;padding:12px 14px;border-radius:999px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <span style="display:inline-block;width:8px;height:8px;border-radius:999px;background:#dcb274;box-shadow:0 0 0 6px rgba(220,178,116,0.14);"></span>
+                  <strong style="font-size:13px;">Thinking</strong>
+                  <span style="font-size:12px;color:#dacdbf;">4 steps</span>
+                </div>
+                <span style="font-size:12px;color:#dacdbf;">expand</span>
+              </div>
+              <div style="margin-top:12px;padding:14px;border-radius:16px;background:#fff8f1;color:#231a12;min-height:188px;">
+                final answer content gets more visual priority
+              </div>
+            </div>
+          </div>
+          <div style="padding:14px;border-radius:18px;background:#fbf7f2;border:1px solid #d8c9b8;display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div class="label">References</div>
+              <div class="label">Accordion</div>
+            </div>
+            <div style="padding:0;border-radius:12px;background:#fff;border:1px solid #d8c9b8;overflow:hidden;">
+              <div style="padding:12px;border-bottom:1px solid #eadfd2;">doc 1 title</div>
+              <div style="padding:12px;background:#fcfaf7;">expanded excerpt</div>
+            </div>
+            <div style="padding:12px;border-radius:12px;background:#fff;border:1px solid #d8c9b8;">doc 2 collapsed</div>
+            <div style="padding:12px;border-radius:12px;background:#fff;border:1px solid #d8c9b8;">doc 3 collapsed</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>方案 B</h3>
+      <p>回答结束后自动收起 thinking，只留摘要入口，把视觉重心交给最终结果。</p>
+    </div>
+  </div>
+</div>

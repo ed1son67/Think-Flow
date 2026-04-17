@@ -1,0 +1,83 @@
+<h2>Ask Wiki Layout Direction</h2>
+<p class="subtitle">左侧保留提问框、状态和结果。右侧专注展示可折叠的引用文档。</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">A · 左侧整列工作区</div>
+        <div class="mockup-body" style="display:grid;grid-template-columns:1.1fr 0.9fr;gap:16px;background:#f6f0e9;">
+          <div style="display:flex;flex-direction:column;gap:12px;min-height:420px;">
+            <div style="padding:14px;border-radius:14px;background:#fff8f1;border:1px solid #d8c9b8;">
+              <div class="label">Question</div>
+              <div class="placeholder" style="height:72px;">textarea + actions</div>
+            </div>
+            <div style="padding:14px;border-radius:14px;background:#fff8f1;border:1px solid #d8c9b8;">
+              <div class="label">Status</div>
+              <div class="placeholder" style="height:58px;">process / mode / task</div>
+            </div>
+            <div style="padding:14px;border-radius:14px;background:#201710;color:#f7efe5;border-radius:18px;flex:1;display:flex;flex-direction:column;justify-content:flex-end;">
+              <div class="label" style="color:#d8c6b3;">Result</div>
+              <div style="margin-top:10px;padding:14px;border-radius:14px;background:rgba(255,255,255,0.08);min-height:170px;">
+                output emphasized at the bottom
+              </div>
+            </div>
+          </div>
+          <div style="padding:14px;border-radius:18px;background:#fbf7f2;border:1px solid #d8c9b8;display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div class="label">References</div>
+              <div class="label">Foldable</div>
+            </div>
+            <div style="padding:12px;border-radius:12px;background:#fff;border:1px solid #d8c9b8;">doc 1 summary</div>
+            <div style="padding:12px;border-radius:12px;background:#fff;border:1px solid #d8c9b8;">doc 2 summary</div>
+            <div style="padding:12px;border-radius:12px;background:#fff;border:1px solid #d8c9b8;">doc 3 summary</div>
+            <div class="placeholder" style="flex:1;">document preview / metadata</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>方案 A</h3>
+      <p>左边是一整列工作区，结果区仍然放在左侧底部，但整体阅读流更稳定。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">B · 左上控制 / 左下结果锚定</div>
+        <div class="mockup-body" style="display:grid;grid-template-columns:1fr 0.95fr;gap:16px;background:#f6f0e9;">
+          <div style="display:grid;grid-template-rows:auto 1fr;gap:12px;min-height:420px;">
+            <div style="padding:14px;border-radius:14px;background:#fff8f1;border:1px solid #d8c9b8;">
+              <div class="label">Question + Status</div>
+              <div class="placeholder" style="height:96px;">input / mode / actions / progress</div>
+            </div>
+            <div style="padding:14px;border-radius:20px;background:#201710;color:#f7efe5;display:flex;flex-direction:column;justify-content:flex-end;">
+              <div class="label" style="color:#d8c6b3;">Bottom Output</div>
+              <div style="margin-top:10px;padding:14px;border-radius:14px;background:rgba(255,255,255,0.08);min-height:210px;">
+                output visually anchored to left-bottom
+              </div>
+            </div>
+          </div>
+          <div style="padding:14px;border-radius:18px;background:#fbf7f2;border:1px solid #d8c9b8;display:flex;flex-direction:column;gap:10px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div class="label">Reference Docs</div>
+              <div class="label">Accordion</div>
+            </div>
+            <div style="padding:0;border-radius:12px;background:#fff;border:1px solid #d8c9b8;overflow:hidden;">
+              <div style="padding:12px;border-bottom:1px solid #eadfd2;">doc 1 title</div>
+              <div style="padding:12px;background:#fcfaf7;">expanded excerpt</div>
+            </div>
+            <div style="padding:12px;border-radius:12px;background:#fff;border:1px solid #d8c9b8;">doc 2 collapsed</div>
+            <div style="padding:12px;border-radius:12px;background:#fff;border:1px solid #d8c9b8;">doc 3 collapsed</div>
+            <div class="placeholder" style="flex:1;">right rail dedicated to citations</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>方案 B</h3>
+      <p>更强调“输出在左下”的视觉锚点，右侧引用区更像独立的证据面板。</p>
+    </div>
+  </div>
+</div>
