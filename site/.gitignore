@@ -17,6 +17,7 @@
 /.next/
 /out/
 /src/.source/
+/.codex-query-state/
 
 # production
 /build

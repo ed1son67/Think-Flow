@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { RootProvider } from "fumadocs-ui/provider/next";
+import { AskWikiProvider } from "@/components/ask-wiki/ask-wiki-provider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -33,6 +34,7 @@ export default function RootLayout({
           theme={{ enabled: false }}
         >
           {children}
+          <AskWikiProvider />
         </RootProvider>
       </body>
     </html>

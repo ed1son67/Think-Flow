@@ -6,6 +6,7 @@ import {
   DocsPage,
   DocsTitle,
 } from "fumadocs-ui/page";
+import { FrontmatterPanel } from "@/components/frontmatter-panel";
 import { mdxComponents } from "@/mdx-components";
 import { source } from "@/lib/source";
 
@@ -49,12 +50,23 @@ export default async function DocsCatchAllPage({ params }: PageProps) {
   }
 
   const MDXContent = page.data.body;
+  const frontmatterYaml =
+    typeof page.data.frontmatterYaml === "string"
+      ? page.data.frontmatterYaml
+      : undefined;
+  const shouldShowFrontmatter =
+    page.data.section === "sources" &&
+    typeof frontmatterYaml === "string" &&
+    frontmatterYaml.length > 0;
 
   return (
     <DocsPage toc={page.data.toc}>
       <DocsTitle>{page.data.title}</DocsTitle>
       <DocsDescription>{page.data.description}</DocsDescription>
       <DocsBody className="wiki-prose">
+        {shouldShowFrontmatter ? (
+          <FrontmatterPanel yaml={frontmatterYaml} />
+        ) : null}
         <MDXContent components={mdxComponents} />
       </DocsBody>
     </DocsPage>
