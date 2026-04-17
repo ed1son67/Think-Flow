@@ -88,6 +88,22 @@ think-flow/
 - `pytest`：用于运行测试
 - Obsidian：用于浏览和维护本地 Wiki
 
+## Frontend Wiki
+
+仓库现在也可以用一个独立的 Next.js + Fumadocs 前端来浏览 `wiki/`：
+
+```bash
+cd site
+npm install
+npm run dev
+```
+
+说明：
+
+- `wiki/` 仍然是内容源
+- 启动和构建前会自动把 `wiki/` 转成 `site/content/docs`
+- 搜索使用内置 Orama，已按中英混合内容做 tokenizer 配置
+
 ## 安装
 
 ### 1. 克隆仓库
